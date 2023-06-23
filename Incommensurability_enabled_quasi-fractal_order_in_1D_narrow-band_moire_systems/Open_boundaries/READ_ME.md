@@ -1,7 +1,7 @@
 # Overview
 
 This is a c++ code performs Density Matrix Renormalization Group (DMRG) calculations using the iTensor library (https://itensor.org/).
-Includes calculations of the ground state energy, entanglement entropy, fidelity, and structure factor for the generalized Aubry-André-Harper model.
+Includes calculations of the ground state energy, entanglement entropy, fidelity, and structure factor for the generalized Aubry-André-Harper model, using open boundary conditions.
 
 ## Compilation
 
