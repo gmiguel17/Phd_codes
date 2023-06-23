@@ -61,7 +61,7 @@ Contains files with convergence information for each $\phi$ configuration.
   - Data: Each row contains $\phi$ value, maxdim, deltaEnergy, eVariance, deltaS, and NsweepsTot for each $\phi$ configuration, where:
     - maxdim: Maximum bond dimension of the MPS
     - deltaEnergy: Difference between the energy of the last two sweeps.
-    - eVariance: Energy variance for the last sweep, defined as $\Delta E_{\textrm{var}} \langle H^2 \rangle - \langle H \rangle^2$.
+    - eVariance: Energy variance for the last sweep, defined as $\Delta E_{\textrm{var}} = \langle H^2 \rangle - \langle H \rangle^2$.
     - deltaS: Difference between the middle-site entanglement entropies of the last two sweeps.
     - NsweepsTot: Total number of sweeps performed.
 
@@ -87,10 +87,10 @@ Contains files related to the correlation matrix (CMat) and its properties.
   - Data: $\phi$ value and corresponding average density $\langle n_i \rangle$ for each $\phi$ configuration.
 
 - `S.<filename>`
-  - Data: $\phi$ value and corresponding single-particle entanglement entropy defined as $ -\textrm{Tr}[C\log C]=-\sum_{\alpha=1}^{N}n_{\alpha}\log(n_{\alpha}) $ for each $\phi$ configuration.
+  - Data: $\phi$ value and corresponding single-particle entanglement entropy defined as $ -\textrm{Tr}[C\log C]=-\sum_{\alpha=1}^{N} n_{\alpha}\log(n_{\alpha}) $ for each $\phi$ configuration.
 
 - `IPR.<filename>`
-  - Data: $\phi$ value and corresponding IPR of natural orbitals, defined as $ {\textrm IPR}_{{\textrm sp}}=\sum_{\alpha=1}^{N}n_{\alpha}\sum_{j=1}^{N}|\phi_{\alpha}(j)|^{4} $, for each $\phi$ configuration.
+  - Data: $\phi$ value and corresponding IPR of natural orbitals, defined as $ \textrm{IPR}_{\textrm{sp}}=\sum_{\alpha=1}^{N}n_{\alpha}\sum_{j=1}^{N}|\phi_{\alpha}(j)|^{4} $, for each $\phi$ configuration.
 
 ### Data_F Folder
 
