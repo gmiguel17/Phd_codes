@@ -87,10 +87,10 @@ Contains files related to the correlation matrix (CMat) and its properties.
   - Data: $\phi$ value and corresponding average density $\langle n_i \rangle$ for each $\phi$ configuration.
 
 - `S.<filename>`
-  - Data: $\phi$ value and corresponding single-particle entanglement entropy defined as $S__{\textrm{sp}} = -\textrm{Tr} (C\log C) = - \sum\limits_{\alpha=1}^N n_{\alpha} \log(n_{\alpha})$ for each $\phi$ configuration.
+  - Data: $\phi$ value and corresponding single-particle entanglement entropy defined as $S_{sp} = -\textrm{Tr} (C\log C) = - \sum\limits_{\alpha=1}^N n_{\alpha} \log(n_{\alpha})$ for each $\phi$ configuration.
 
 - `IPR.<filename>`
-  - Data: $\phi$ value and corresponding IPR of natural orbitals, defined as $\textrm{IPR}_{\textrm{sp}}=\sum\limits_{\alpha=1}^{N} n_{\alpha} \sum\limits_{j=1}^{N} |\phi_{\alpha}(j)|^{4}$, for each $\phi$ configuration.
+  - Data: $\phi$ value and corresponding IPR of natural orbitals, defined as $\textrm{IPR}_{sp}=\sum\limits_{\alpha=1}^{N} n_{\alpha} \sum\limits_{j=1}^{N} |\phi_{\alpha}(j)|^{4}$, for each $\phi$ configuration.
 
 ### Data_F Folder
 
