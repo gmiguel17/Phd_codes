@@ -71,18 +71,17 @@ int main(int argc,char **argv)
 	auto parinit=atof(argv[10]);
 	auto deltapar=atof(argv[11]);	
 	auto parfinal=atof(argv[12]);	
-	auto Nuc=atoi(argv[13]);
+	auto Nuc=N; // number of unit cells in the system (just matters for the selection of phi configurations below)
 	auto dataPrecision=12; //sets the numerical precision of data to write to files	
 
 
-	auto NcTotal=1; //number of phi configurations
+	auto NcTotal=world_size; //number of phi configurations
 	auto phiinit=3.14159265359/4.0;
 	auto deltaphi=2.0*M_PI/NcTotal/Nuc;        		
 	std::vector< double > phiConfs;
 	for(int iphi=0;iphi<NcTotal;iphi++){
 		phiConfs.push_back(phiinit+iphi*deltaphi);
 	}
-	
 	
 	// Define sites and sweeps to be used
 	auto sitesElec = Fermion(N,{"ConserveNf",true});		
@@ -115,17 +114,16 @@ int main(int argc,char **argv)
 		params.push_back(V);
 		params.push_back(V2);		
 		params.push_back(phi);				
-		params[exclusionparams] = par;
-		Np=params[1];
-
-		println("\n **** Variable parameter: ",params[exclusionparams]," **** \n");		
+		params[exclusionparams] = par;	
 
 		//Definitions for file names
-		std::vector<string> VarNames={"id","maxCutoff","N","Np","N2","t","U","V","V2","phi","k"};	
+		std::vector<string> VarNames={"id","maxCutoff","N","Np","N2","t","U","V","V2","phi"};	
 		std::vector<string> VarValsString={std::to_string(id),std::to_string(maxcutoffExp)};
 		for(unsigned int iter=0;iter<params.size();iter++)
 			VarValsString.push_back(std::to_string(params[iter]));
 		auto fname = filename(VarNames, VarValsString);
+
+		println("\n **** Variable parameter: ",VarNames[exclusion],"=",params[exclusionparams]," **** \n");			
 
 		unsigned int phiindexVars=9; //index of phi in VarNames
 		std::vector<unsigned int> VarExclusions = {phiindexVars};//Exclude positions from 0 to VarNames.size()
@@ -300,7 +298,10 @@ int main(int argc,char **argv)
 			
 			//Save CMat -- need to open a different file for each configuration
 			for(int ind1=0;ind1<world_size;ind1++){
-				outfile.open("Data_C/CMat."+fname); //I have to use one name per process
+				auto auxVarValsString = VarValsString;
+				auxVarValsString[phiindexVars] = std::to_string(phiWorld[ind1]);
+				auto fnamevarPhi = filename(VarNames, auxVarValsString);
+				outfile.open("Data_C/CMat."+fnamevarPhi); //I have to use one name per process
 				for(int indrow=0;indrow<N;indrow++){
 					for(int indcol=0;indcol<N;indcol++){					
 						outfile << std::setprecision(dataPrecision)  << CMatVecWorld[ind1*N*N+indrow*N+indcol] << " ";
