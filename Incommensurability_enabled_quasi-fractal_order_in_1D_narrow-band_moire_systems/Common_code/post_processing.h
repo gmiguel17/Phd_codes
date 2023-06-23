@@ -6,7 +6,7 @@ using namespace itensor;
 
 /* 
 
-This file contains functions to calculate quantities through the obtained DMRG wave function.
+This file contains functions to compute different physical observables using the converged DMRG MPS
 
 */
 
@@ -208,21 +208,6 @@ auto ni_ni(auto sitesElec, auto &psi, auto i){
 
 	auto N_i = op(sitesElec,"N",i);//automatically returns tensor on site 
                              		//i with one prime and one unprimed index
-        //auto N_i2 = N_i;//op(sitesElec,"N",i); 
-        //N_i2*=delta(inds(N_i2)[0],inds(N_i)[1]);   
-        /*     
-        auto indexAuxOut = Index(QN(0),1,
-               QN(1),1,
-               Out,"I"); 
-        auto indexAuxIn = Index(QN(0),1,
-               QN(1),1,
-               In,"I");   
-         */             
-        //N_i*=delta(inds(N_i)[1],indexAuxOut);
-        //N_i2*=delta(inds(N_i2)[0],indexAuxIn);        
-        //println("bbb ", indexAux ," bbb \n");          		
-	//println(inds(N_i)[0]," aa ", inds(N_i)[1]," ... ",inds(N_i2)[0]," aa ",inds(N_i2)[1],"\n");	
-	//println(inds(N_i)[0]," aa ", inds(N_i)[1],"\n");	
                              		
 	//'gauge' the MPS to site i
 	psi.position(i);
@@ -245,9 +230,6 @@ auto ni_ni(auto sitesElec, auto &psi, auto i){
 	//Compute <ni^2>
 	nini.noPrime(inds(N_i)[1]);
 	nini*=(N_i)*psidag(i);
-	//auto nini = prime(psi(i),{lim,lip})*(N_i*N_i)*psidag(i);
-	
-	//println("site i=",i,", nini=",eltC(nini),"\n");
 	
 	std::vector<Cplx> ni_And_nini;
 	ni_And_nini.push_back(eltC(ni));
@@ -275,7 +257,6 @@ std::vector<Cplx> ni_nj_varj(auto N, auto sitesElec, auto &psi, auto i){
 	//auto IdentityOpi = op(sitesElec,"Id",i);
 	auto li_1 = leftLinkIndex(psi,i);
 	auto Cij = prime(psi(i),li_1)*(N_i)*psidag(i);
-	//auto Cij = prime(psi(i),li_1)*N_i*psidag(i) - prime(psi(i),li_1)*IdentityOpi*psidag(i);	
 	for(int j = i+1; j <= N ; ++j){
 	    if(j>i+1){
 		Cij *= psi(j-1);
@@ -299,12 +280,6 @@ std::vector<Cplx> ni_nj_varj(auto N, auto sitesElec, auto &psi, auto i){
 
 auto Structure_Factor(auto sitesElec, auto N, auto &psi, auto qlist){
 
-	/*
-	std::vector<double> qlist;
-	auto Npoints = 20;
-	for(int k=0;k<Npoints;k++)
-		qlist.push_back(2*M_PI/Npoints*k);
-	*/
 	auto Npoints=qlist.size();
 
 	//Build (<ninj> - <ni><nj>) matrix
@@ -315,7 +290,6 @@ auto Structure_Factor(auto sitesElec, auto N, auto &psi, auto qlist){
 		auto cii = ni_ni(sitesElec,psi, iter+1);
 		auto diagElem=cii[1]-cii[0]*cii[0];//<ni^2> - <ni><ni>
 		nivec.push_back(cii[0]);
-		//println("site=",iter," ",diagElem);
 		CMat.set(ind=iter+1,prime(ind)=iter+1, diagElem);
 	}
 	
@@ -323,8 +297,6 @@ auto Structure_Factor(auto sitesElec, auto N, auto &psi, auto qlist){
 		std::vector<Cplx> Cijelems = ni_nj_varj(N,sitesElec, psi, ii);
 
 		for(auto jj=0;jj<N-ii;jj++){
-			//if(ii==N-1)
-			//	println(jj," ",Cijelems[jj]);
 			auto OffDiagElem = Cijelems[jj]-nivec[ii-1]*nivec[ii+jj]; //<ni nj> - <ni><nj>
 			CMat.set(ind=ii,prime(ind)=ii+jj+1, OffDiagElem);
 			CMat.set(ind=ii+jj+1,prime(ind)=ii, OffDiagElem); //it's the same because  <(ni-1/2)(nj-1/2)>= <(nj-1/2)(ni-1/2)>
@@ -362,7 +334,6 @@ auto ni_nj_Mat(auto sitesElec, auto N, auto &psi){
 		auto cii = ni_ni(sitesElec,psi, iter+1);
 		auto diagElem=cii[1]-cii[0]*cii[0];//<ni^2> - <ni><ni>
 		nivec.push_back(cii[0]);
-		//println("site=",iter," ",diagElem);
 		CMat.set(ind=iter+1,prime(ind)=iter+1, diagElem);
 	}
 	
@@ -370,8 +341,6 @@ auto ni_nj_Mat(auto sitesElec, auto N, auto &psi){
 		std::vector<Cplx> Cijelems = ni_nj_varj(N,sitesElec, psi, ii);
 
 		for(auto jj=0;jj<N-ii;jj++){
-			//if(ii==N-1)
-			//	println(jj," ",Cijelems[jj]);
 			auto OffDiagElem = Cijelems[jj]-nivec[ii-1]*nivec[ii+jj]; //<ni nj> - <ni><nj>
 			CMat.set(ind=ii,prime(ind)=ii+jj+1, OffDiagElem);
 			CMat.set(ind=ii+jj+1,prime(ind)=ii, OffDiagElem); //it's the same because  <(ni-1/2)(nj-1/2)>= <(nj-1/2)(ni-1/2)>
@@ -462,7 +431,6 @@ auto xi_xj(auto sitesElec, auto &psi, auto i, auto j){
 	Cij *= x_j;
 	Cij *= psidag(j);
 
-	//elt (or eltC for complex tensor) extract the elements of a tensor. In this case there is only one element.
 	// see https://itensor.org/docs.cgi?vers=cppv3&page=classes/itensor ("Element Access Methods")
 	auto result = eltC(Cij); //or eltC(Cij) if expecting complex	
 
@@ -559,7 +527,6 @@ auto KohnLocLen(auto sitesElec, auto N,auto Np, auto &psi){
 		auto cii = xi_xi(sitesElec,psi, iter+1);
 		auto diagElem=cii[1]-cii[0]*cii[0];//<ni^2> - <ni><ni>
 		nivec.push_back(cii[0]);
-		//println("site=",iter," ",diagElem);
 		CMat.set(ind=iter+1,prime(ind)=iter+1, diagElem);
 	}
 	
@@ -567,8 +534,6 @@ auto KohnLocLen(auto sitesElec, auto N,auto Np, auto &psi){
 		std::vector<Cplx> Cijelems = xi_xj_varj(N,sitesElec, psi, ii);
 
 		for(auto jj=0;jj<N-ii;jj++){
-			//if(ii==N-1)
-			//	println(jj," ",Cijelems[jj]);
 			auto OffDiagElem = Cijelems[jj]-nivec[ii-1]*nivec[ii+jj]; //<ni nj> - <ni><nj>
 			CMat.set(ind=ii,prime(ind)=ii+jj+1, OffDiagElem);
 			CMat.set(ind=ii+jj+1,prime(ind)=ii, OffDiagElem); //it's the same because  <(ni-1/2)(nj-1/2)>= <(nj-1/2)(ni-1/2)>
@@ -600,12 +565,8 @@ auto psiNp_cd_psiNpm1_AUTOMPS(auto sitesElec, auto N, auto &psiNp, auto &psiNpm1
 		auto sitesElecNoNf = Fermion(N);
 		auto ampo = AutoMPO(sitesElecNoNf); 
 		ampo += "Cdag",i; 
-		println("ola1");
 		auto mpo = toMPO(ampo); 
-		println("ola2");
-		//removeQNs(psiNp);	
-		//removeQNs(mpo);		
-		//removeQNs(psiNpm1);							
+						
 		auto result = innerC(psiNp,mpo,psiNpm1);
 		PHI.push_back(result);
 	}
@@ -626,11 +587,6 @@ auto psiNp_cid_psiNpm1(auto sitesElec, auto N, auto &psiNp, auto &psiNpm1, auto 
 
 	auto psidagNp = dag(psiNp);
 	psidagNp.prime();
-
-	//index linking i to i-1:
-	//auto li_1 = leftLinkIndex(psiNp,i);
-	//auto PHIi = prime(psiNp(i),li_1)*Adag_i*psidagNpm1(i);
-	
 	
 	auto PHIi=psiNpm1(1);
 	if(i==1){

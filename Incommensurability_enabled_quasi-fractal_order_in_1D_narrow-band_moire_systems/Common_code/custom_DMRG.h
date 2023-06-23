@@ -4,6 +4,7 @@
 
 using namespace itensor;
 
+
 // DMRG calculation starting random initial state
 // params[0] and params[1] are ALWAYS assumed to be respectively N and Np
 auto dmrgFromModel(auto sitesElec, auto params , auto sweeps){
@@ -55,9 +56,8 @@ auto dmrgFromModel(auto sitesElec, auto params, auto sweeps, MPS &psi0){
 
 	auto H = model(sitesElec,params);
 
-	println("\nTotal QN of Initial State = ",totalQN(psi0));//check total quantum number
 	auto [energy,psi] = dmrg(H,psi0,sweeps,{"Quiet",true});//here I'm using my dmrg function that also returns the truncation error
-	println("\nTotal QN of Ground State = ",totalQN(psi));//check conservation of total quantum number after calculation	
+	println("\nTotal QN of Initial State = ",totalQN(psi0));//check total quantum number
 	printfln("Ground state energy = %.20f",energy);
 	
 	auto H2 = innerC(H,psi,H,psi);//"innerC" is for complex MPS while "inner" is for real
