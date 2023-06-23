@@ -1,12 +1,13 @@
 #include <mpi.h>
 #include <stdlib.h>
 
+#include <filesystem>
 #include <iomanip>  // std::setprecision
 #include <vector>
 
+// Do not change the order of the first 4 .h imports!
 #include "../Common_code/custom_DMRG.h"  // custom DMRG sweeping procedures
 #include "../Common_code/file_handling.h"  // functions to create file names automatically
-#include "../Common_code/post_processing.h"
 #include "itensor/all.h"
 #include "itensor/util/print_macro.h"
 #include "model_dmrg.h"
@@ -150,8 +151,12 @@ int main(int argc, char **argv) {
     auto fnameExcludepar =
         filenameExcludeParams(VarNames, VarValsString, VarExclusions);
 
+    // Define Hamiltonian
+    auto H = model(sitesElec, params);
+
+    // DMRG calculation
     auto [energy, psi, deltaEnergy, eVariance, deltaSEnt, NsweepsTot] =
-        DMRGSweepsFullNoInitState(sitesElec, params, sweeps, RemainingSweeps,
+        DMRGSweepsFullNoInitState(sitesElec, H, params, sweeps, RemainingSweeps,
                                   deltaEnergyCrit, eVarianceCrit, deltaSEntCrit,
                                   NsweepsMax, fname);
 
@@ -323,6 +328,8 @@ int main(int argc, char **argv) {
     // write to files only from root process after gathering data, to avoid
     // problems
     if (my_rank == 0) {
+      // Save ground-state energy
+      std::filesystem::create_directory("Data_Energy");
       std::ofstream outfile;
       outfile.open("Data_Energy/" + fnameExcludepar,
                    std::ios_base::app);  // append instead of overwrite
@@ -332,6 +339,7 @@ int main(int argc, char **argv) {
       outfile.close();
 
       // Save convergence info
+      std::filesystem::create_directory("Data_Convergence");
       outfile.open("Data_Convergence/" + fnameExcludepar,
                    std::ios_base::app);  // append instead of overwrite
       for (int ind = 0; ind < world_size; ind++)
@@ -346,6 +354,7 @@ int main(int argc, char **argv) {
       outfile.close();
 
       // Save entanglement entropy
+      std::filesystem::create_directory("Data_EE");
       outfile.open("Data_EE/" + fnameExcludepar,
                    std::ios_base::app);  // append instead of overwrite
       for (int ind = 0; ind < world_size; ind++)
@@ -354,6 +363,7 @@ int main(int argc, char **argv) {
       outfile.close();
 
       // Save CMat -- need to open a different file for each configuration
+      std::filesystem::create_directory("Data_C");
       for (int ind1 = 0; ind1 < world_size; ind1++) {
         auto phik = phikConfs[ind1];
         auto phiaux = std::get<0>(phik);
@@ -418,6 +428,7 @@ int main(int argc, char **argv) {
       outfile.close();
 
       // Save Fidelity
+      std::filesystem::create_directory("Data_F");
       if (par > parinit) {
         outfile.open("Data_F/" + fnameExcludepar,
                      std::ios_base::app);  // append instead of overwrite
@@ -429,6 +440,7 @@ int main(int argc, char **argv) {
       }
 
       // Save all structure factors
+      std::filesystem::create_directory("Data_St");
       outfile.open("Data_St/" + fnameExcludepar,
                    std::ios_base::app);  // append instead of overwrite
       for (int ind = 0; ind < world_size; ind++) {

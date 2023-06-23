@@ -2,13 +2,14 @@
 
 #include "itensor/all.h"
 #include "itensor/util/print_macro.h"
+#include "post_processing.h"
 
 using namespace itensor;
 
 // DMRG calculation starting random initial state
 // params[0] and params[1] are ALWAYS assumed to be respectively N and Np
-auto dmrgFromModel(auto sitesElec, auto params, auto sweeps) {
-  auto H = model(sitesElec, params);
+auto dmrgFromModel(auto &sitesElec, MPO &H, auto params, auto sweeps) {
+  // auto H = model(sitesElec, params);
 
   auto N = int(params[0]);
   auto Np = int(params[1]);
@@ -58,8 +59,9 @@ auto dmrgFromModel(auto sitesElec, auto params, auto sweeps) {
 
 // DMRG calculation starting with a sent initial state psi0
 // params[0] and params[1] are ALWAYS assumed to be respectively N and Np
-auto dmrgFromModel(auto sitesElec, auto params, auto sweeps, MPS &psi0) {
-  auto H = model(sitesElec, params);
+auto dmrgFromModel(auto &sitesElec, MPO &H, auto params, auto sweeps,
+                   MPS &psi0) {
+  // auto H = model(sitesElec, params);
 
   auto [energy, psi] =
       dmrg(H, psi0, sweeps,
@@ -82,9 +84,9 @@ auto dmrgFromModel(auto sitesElec, auto params, auto sweeps, MPS &psi0) {
 // Keep sweeping as specified by "RemainingSweeps" untill convergence specified
 // by criteria deltaEnergyCrit,deltaSEntCrit and eVarianceCrit is reached If the
 // number of sweeps reaches NsweepsMax, the calculation also stops
-auto SweepsToConvergence(auto &sitesElec, auto params, auto &RemainingSweeps,
-                         auto energy, auto Sent, auto &psi,
-                         auto deltaEnergyCrit, auto eVarianceCrit,
+auto SweepsToConvergence(auto &sitesElec, MPO &H, auto params,
+                         auto &RemainingSweeps, auto energy, auto Sent,
+                         auto &psi, auto deltaEnergyCrit, auto eVarianceCrit,
                          auto deltaSEntCrit, auto NsweepsMax, auto fname) {
   auto N = int(params[0]);
   auto swstep = 0;
@@ -96,7 +98,7 @@ auto SweepsToConvergence(auto &sitesElec, auto params, auto &RemainingSweeps,
   while ((deltaEnergy > deltaEnergyCrit || deltaSEnt > deltaSEntCrit ||
           eVariance > eVarianceCrit) &&
          swstep <= NsweepsMax) {
-    auto resultnext = dmrgFromModel(sitesElec, params, RemainingSweeps, psi);
+    auto resultnext = dmrgFromModel(sitesElec, H, params, RemainingSweeps, psi);
     energynew = std::get<0>(resultnext);
     psi = std::get<1>(resultnext);
     eVariance = std::fabs(std::get<2>(resultnext));
@@ -119,10 +121,11 @@ auto SweepsToConvergence(auto &sitesElec, auto params, auto &RemainingSweeps,
 }
 
 // DMRG calculation starting with random initial MPS (see model_dmrg.cc)
-auto DMRGSweepsFullNoInitState(auto &sitesElec, auto params, auto &sweeps,
-                               auto &RemainingSweeps, auto deltaEnergyCrit,
-                               auto eVarianceCrit, auto deltaSEntCrit,
-                               auto NsweepsMax, auto fname) {
+auto DMRGSweepsFullNoInitState(auto &sitesElec, MPO &H, auto params,
+                               auto &sweeps, auto &RemainingSweeps,
+                               auto deltaEnergyCrit, auto eVarianceCrit,
+                               auto deltaSEntCrit, auto NsweepsMax,
+                               auto fname) {
   auto N = int(params[0]);
   auto energy = 0.0;
   MPS psi;
@@ -132,14 +135,14 @@ auto DMRGSweepsFullNoInitState(auto &sitesElec, auto params, auto &sweeps,
   auto NsweepsTot = 0;
 
   // Initial sweeps
-  auto result = dmrgFromModel(sitesElec, params, sweeps);
+  auto result = dmrgFromModel(sitesElec, H, params, sweeps);
   energy = std::get<0>(result);
   psi = std::get<1>(result);
 
   // Remaining sweeps to convergence
   auto Sent = EntanglementEntropy(sitesElec, psi, int(N / 2.0));
   auto final_result = SweepsToConvergence(
-      sitesElec, params, RemainingSweeps, energy, Sent, psi, deltaEnergyCrit,
+      sitesElec, H, params, RemainingSweeps, energy, Sent, psi, deltaEnergyCrit,
       eVarianceCrit, deltaSEntCrit, NsweepsMax, fname);
   energy = std::get<0>(final_result);
   psi = std::get<1>(final_result);
@@ -155,10 +158,10 @@ auto DMRGSweepsFullNoInitState(auto &sitesElec, auto params, auto &sweeps,
 // This DMRG calculation uses psiold as the initial state for the first sweep
 // **IF** loopindex>0 Useful for fidelity calculations, where the MPS in for a
 // set of parameters can be used as initial state for the next set of parameters
-auto DMRGSweepsFull(auto loopindex, auto &sitesElec, auto params, auto &sweeps,
-                    auto &RemainingSweeps, auto psiold, auto deltaEnergyCrit,
-                    auto eVarianceCrit, auto deltaSEntCrit, auto NsweepsMax,
-                    auto fname) {
+auto DMRGSweepsFull(auto loopindex, auto &sitesElec, MPO &H, auto params,
+                    auto &sweeps, auto &RemainingSweeps, auto psiold,
+                    auto deltaEnergyCrit, auto eVarianceCrit,
+                    auto deltaSEntCrit, auto NsweepsMax, auto fname) {
   auto N = int(params[0]);
   auto energy = 0.0;
   MPS psi;
@@ -168,15 +171,15 @@ auto DMRGSweepsFull(auto loopindex, auto &sitesElec, auto params, auto &sweeps,
   auto NsweepsTot = 0;
   if (loopindex == 0) {
     // Initial sweeps
-    auto result = dmrgFromModel(sitesElec, params, sweeps);
+    auto result = dmrgFromModel(sitesElec, H, params, sweeps);
     energy = std::get<0>(result);
     psi = std::get<1>(result);
 
     // Remaining sweeps to convergence
     auto Sent = EntanglementEntropy(sitesElec, psi, int(N / 2.0));
     auto final_result = SweepsToConvergence(
-        sitesElec, params, RemainingSweeps, energy, Sent, psi, deltaEnergyCrit,
-        eVarianceCrit, deltaSEntCrit, NsweepsMax, fname);
+        sitesElec, H, params, RemainingSweeps, energy, Sent, psi,
+        deltaEnergyCrit, eVarianceCrit, deltaSEntCrit, NsweepsMax, fname);
     energy = std::get<0>(final_result);
     psi = std::get<1>(final_result);
     deltaEnergy = std::get<2>(final_result);
@@ -185,15 +188,15 @@ auto DMRGSweepsFull(auto loopindex, auto &sitesElec, auto params, auto &sweeps,
     NsweepsTot = std::get<5>(final_result);
   } else {
     // Initial sweeps
-    auto result = dmrgFromModel(sitesElec, params, sweeps, psiold);
+    auto result = dmrgFromModel(sitesElec, H, params, sweeps, psiold);
     energy = std::get<0>(result);
     psi = std::get<1>(result);
 
     // Remaining sweeps to convergence
     auto Sent = EntanglementEntropy(sitesElec, psi, int(N / 2.0));
     auto final_result = SweepsToConvergence(
-        sitesElec, params, RemainingSweeps, energy, Sent, psi, deltaEnergyCrit,
-        eVarianceCrit, deltaSEntCrit, NsweepsMax, fname);
+        sitesElec, H, params, RemainingSweeps, energy, Sent, psi,
+        deltaEnergyCrit, eVarianceCrit, deltaSEntCrit, NsweepsMax, fname);
     energy = std::get<0>(final_result);
     psi = std::get<1>(final_result);
     deltaEnergy = std::get<2>(final_result);
